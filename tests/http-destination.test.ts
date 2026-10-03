@@ -12,7 +12,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('HttpDestination', () => {
   it('posts the local clip contract as JSON', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 204 }));
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 204 }));
     await new HttpDestination({ endpoint: 'https://receiver.example/clips', bearerToken: 'secret' })
       .send(clip, { sourceUrl: clip.sourceUrl });
 
