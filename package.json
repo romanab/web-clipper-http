@@ -4,12 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build:upstream": "npm --prefix upstream/obsidian-clipper run build:api",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "build": "tsc && node scripts/copy-static.mjs"
+    "test": "vitest run tests",
+    "build": "npm run build:upstream && npm run typecheck && node scripts/build.mjs"
   },
   "devDependencies": {
     "@types/chrome": "^0.1.1",
+    "esbuild": "^0.28.1",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   }
