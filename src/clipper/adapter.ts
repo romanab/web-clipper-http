@@ -1,12 +1,21 @@
 import type { CompiledClip } from '../types.js';
+import type {
+  DocumentParser,
+  ClipResult,
+} from '../../upstream/obsidian-clipper/src/api.js';
+import type { Template } from '../../upstream/obsidian-clipper/src/types/types.js';
 
-// This is intentionally the only module that imports the pinned upstream API.
-// `npm run build:upstream` produces this artifact; see UPSTREAM.md.
-import {
-  clip as upstreamClip,
-  type DocumentParser,
-  type Template,
-} from '../../upstream/obsidian-clipper/dist/api.mjs';
+// Runtime code comes from the pinned upstream public API artifact.
+// Types come from the same pinned upstream source because build:api emits JS only.
+import * as upstreamApi from '../../upstream/obsidian-clipper/dist/api.mjs';
+
+const upstreamClip = upstreamApi.clip as (input: {
+  html: string;
+  url: string;
+  template: Template;
+  documentParser: DocumentParser;
+  propertyTypes?: Record<string, string>;
+}) => Promise<ClipResult>;
 
 export type ClipperTemplate = Template;
 
