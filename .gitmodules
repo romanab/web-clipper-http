@@ -1,0 +1,3 @@
+[submodule "upstream/obsidian-clipper"]
+	path = upstream/obsidian-clipper
+	url = git@github.com:obsidianmd/obsidian-clipper.git
