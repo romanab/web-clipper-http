@@ -1,12 +1,12 @@
 import type { CompiledClip } from '../types.js';
 
-// This is intentionally the only module that imports upstream internals.
-// The submodule is pinned; see UPSTREAM.md.
+// This is intentionally the only module that imports the pinned upstream API.
+// `npm run build:upstream` produces this artifact; see UPSTREAM.md.
 import {
   clip as upstreamClip,
   type DocumentParser,
   type Template,
-} from '../../upstream/obsidian-clipper/src/api.js';
+} from '../../upstream/obsidian-clipper/dist/api.mjs';
 
 export type ClipperTemplate = Template;
 
