@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Web Clipper HTTP</title></head>
+<body>
+  <main>
+    <h1>Web Clipper HTTP</h1>
+    <form id="config-form">
+      <p><label>Endpoint URL<br><input id="endpoint" type="url" required placeholder="https://example.com/api/clips"></label></p>
+      <p><label>Bearer token<br><input id="token" type="password" autocomplete="off"></label></p>
+      <button type="submit">Save</button> <span id="status" role="status"></span>
+    </form>
+  </main>
+  <script type="module" src="options.js"></script>
+</body>
+</html>
