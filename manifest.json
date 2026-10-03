@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Web Clipper HTTP",
+  "version": "0.1.0",
+  "description": "Compile web clips with Obsidian Web Clipper core and send them to an HTTP endpoint.",
+  "permissions": ["activeTab", "storage", "scripting"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "action": {
+    "default_title": "Clip to HTTP",
+    "default_popup": "dist/extension/popup.html"
+  },
+  "options_page": "dist/extension/options.html"
+}
