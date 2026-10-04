@@ -1,19 +1,21 @@
 import { loadConfig, saveConfig } from '../config.js';
 import { loadTemplates, saveTemplates } from '../templates/store.js';
 
-const form = document.querySelector<HTMLFormElement>('#config-form');
-const endpoint = document.querySelector<HTMLInputElement>('#endpoint');
-const token = document.querySelector<HTMLInputElement>('#token');
-const status = document.querySelector<HTMLElement>('#status');
-const templateFile = document.querySelector<HTMLInputElement>('#template-file');
-const importButton = document.querySelector<HTMLButtonElement>('#import-templates');
-const exportButton = document.querySelector<HTMLButtonElement>('#export-templates');
-const templateList = document.querySelector<HTMLUListElement>('#template-list');
-const templateStatus = document.querySelector<HTMLElement>('#template-status');
-
-if (!form || !endpoint || !token || !status || !templateFile || !importButton || !exportButton || !templateList || !templateStatus) {
-  throw new Error('Options page is incomplete');
+function requireElement<T extends Element>(selector: string): T {
+  const element = document.querySelector<T>(selector);
+  if (!element) throw new Error(`Options page is missing ${selector}`);
+  return element;
 }
+
+const form = requireElement<HTMLFormElement>('#config-form');
+const endpoint = requireElement<HTMLInputElement>('#endpoint');
+const token = requireElement<HTMLInputElement>('#token');
+const status = requireElement<HTMLElement>('#status');
+const templateFile = requireElement<HTMLInputElement>('#template-file');
+const importButton = requireElement<HTMLButtonElement>('#import-templates');
+const exportButton = requireElement<HTMLButtonElement>('#export-templates');
+const templateList = requireElement<HTMLUListElement>('#template-list');
+const templateStatus = requireElement<HTMLElement>('#template-status');
 
 void loadConfig().then((config) => {
   endpoint.value = config.endpoint;
