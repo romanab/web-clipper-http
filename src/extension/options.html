@@ -8,14 +8,14 @@
     <form id="config-form">
       <p><label>Endpoint URL<br><input id="endpoint" type="url" required placeholder="https://example.com/api/clips"></label></p>
       <p><label>Bearer token<br><input id="token" type="password" autocomplete="off"></label></p>
-      <p><label>Payload<br><select id="payload-mode"><option value="compact">Compact — compiled clip without variables</option><option value="full">Full — include extracted variables and source data</option></select></label></p>
+      <p><label>Payload<br><select id="payload-mode"><option value="compact">Compact — compiled clip only</option><option value="full">Full — include extracted variables and source data</option></select></label></p>
       <button type="submit">Save destination</button> <span id="status" role="status"></span>
     </form>
 
     <h2>Templates</h2>
-    <p>Templates use the Obsidian Web Clipper template JSON shape.</p>
+    <p>Templates use the Obsidian Web Clipper template JSON shape. The active template is marked below.</p>
     <p><input id="template-file" type="file" accept="application/json,.json"> <button id="import-templates" type="button">Import JSON</button></p>
-    <p><button id="export-templates" type="button">Export JSON</button></p>
+    <p><button id="export-templates" type="button">Export all JSON</button></p>
     <ul id="template-list"></ul>
     <p id="template-status" role="status"></p>
   </main>
