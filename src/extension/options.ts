@@ -14,10 +14,15 @@ void loadConfig().then((config) => {
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
-  await saveConfig({
-    endpoint: endpoint.value.trim(),
-    bearerToken: token.value || undefined,
-  });
-  status.textContent = 'Saved';
-  setTimeout(() => { status.textContent = ''; }, 1500);
+  status.textContent = '';
+  try {
+    await saveConfig({
+      endpoint: endpoint.value,
+      bearerToken: token.value || undefined,
+    });
+    status.textContent = 'Saved';
+    setTimeout(() => { status.textContent = ''; }, 1500);
+  } catch (error) {
+    status.textContent = error instanceof Error ? error.message : String(error);
+  }
 });
