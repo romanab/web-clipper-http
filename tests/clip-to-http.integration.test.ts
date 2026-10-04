@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DOMParser } from 'linkedom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { parseHTML } from 'linkedom';
 import { compileClip, type ClipperTemplate } from '../src/clipper/adapter.js';
 import { HttpDestination } from '../src/destinations/http.js';
 
@@ -27,7 +27,32 @@ const html = `<!doctype html>
 </body>
 </html>`;
 
-afterEach(() => vi.restoreAllMocks());
+let previousDocument: typeof globalThis.document | undefined;
+let previousWindow: typeof globalThis.window | undefined;
+let previousDOMParser: typeof globalThis.DOMParser | undefined;
+
+beforeEach(() => {
+  previousDocument = globalThis.document;
+  previousWindow = globalThis.window;
+  previousDOMParser = globalThis.DOMParser;
+
+  const { document, window } = parseHTML(html);
+  Object.assign(globalThis, {
+    document,
+    window,
+    DOMParser: window.DOMParser,
+  });
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  if (previousDocument === undefined) delete (globalThis as { document?: unknown }).document;
+  else globalThis.document = previousDocument;
+  if (previousWindow === undefined) delete (globalThis as { window?: unknown }).window;
+  else globalThis.window = previousWindow;
+  if (previousDOMParser === undefined) delete (globalThis as { DOMParser?: unknown }).DOMParser;
+  else globalThis.DOMParser = previousDOMParser;
+});
 
 describe('clip -> adapter -> HTTP destination', () => {
   it('compiles fixture HTML and posts the local contract', async () => {
@@ -40,6 +65,7 @@ describe('clip -> adapter -> HTTP destination', () => {
 
     expect(clip.noteName).toContain('Fixture Article');
     expect(clip.content).toContain('Fixture Article');
+    expect(clip.content).toContain('deliberately long enough');
     expect(clip.sourceUrl).toBe('https://fixture.example/article');
     expect(clip.properties.source).toBe('https://fixture.example/article');
 
