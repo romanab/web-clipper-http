@@ -46,7 +46,7 @@ function normalizeTemplate(value: unknown): ClipperTemplate {
 
   return {
     id: typeof value.id === 'string' && value.id ? value.id : generateTemplateId(),
-    name: value.name,
+    name: value.name.trim(),
     behavior: behavior as ClipperTemplate['behavior'],
     noteNameFormat: typeof value.noteNameFormat === 'string' ? value.noteNameFormat : '',
     path: typeof value.path === 'string' ? value.path : '',
@@ -81,6 +81,28 @@ export function exportTemplateData(template: ClipperTemplate): Record<string, un
   return exported;
 }
 
+function fingerprint(template: ClipperTemplate): string {
+  return JSON.stringify(exportTemplateData(template));
+}
+
+export function mergeImportedTemplates(existing: ClipperTemplate[], imported: ClipperTemplate[]): { templates: ClipperTemplate[]; added: number; skipped: number } {
+  const base = existing.length === 1 && existing[0]?.id === DEFAULT_TEMPLATE.id ? [] : [...existing];
+  const seen = new Set(base.map(fingerprint));
+  let added = 0;
+  let skipped = 0;
+  for (const template of imported) {
+    const key = fingerprint(template);
+    if (seen.has(key)) {
+      skipped += 1;
+      continue;
+    }
+    base.push(template);
+    seen.add(key);
+    added += 1;
+  }
+  return { templates: base.length ? base : [DEFAULT_TEMPLATE], added, skipped };
+}
+
 export async function loadTemplates(): Promise<ClipperTemplate[]> {
   const stored = await chrome.storage.local.get(TEMPLATES_KEY);
   const value: unknown = stored[TEMPLATES_KEY];
@@ -102,10 +124,7 @@ export async function saveTemplates(templates: ClipperTemplate[]): Promise<void>
 }
 
 export async function loadActiveTemplate(): Promise<ClipperTemplate> {
-  const [templates, stored] = await Promise.all([
-    loadTemplates(),
-    chrome.storage.local.get(ACTIVE_TEMPLATE_KEY),
-  ]);
+  const [templates, stored] = await Promise.all([loadTemplates(), chrome.storage.local.get(ACTIVE_TEMPLATE_KEY)]);
   const activeId = stored[ACTIVE_TEMPLATE_KEY];
   return templates.find((template) => template.id === activeId) ?? templates[0] ?? DEFAULT_TEMPLATE;
 }
@@ -114,4 +133,24 @@ export async function setActiveTemplate(id: string): Promise<void> {
   const templates = await loadTemplates();
   if (!templates.some((template) => template.id === id)) throw new Error(`Unknown template: ${id}`);
   await chrome.storage.local.set({ [ACTIVE_TEMPLATE_KEY]: id });
+}
+
+export async function renameTemplate(id: string, name: string): Promise<void> {
+  const trimmed = name.trim();
+  if (!trimmed) throw new Error('Template name is required');
+  const templates = await loadTemplates();
+  const index = templates.findIndex((template) => template.id === id);
+  if (index < 0) throw new Error(`Unknown template: ${id}`);
+  templates[index] = { ...templates[index], name: trimmed };
+  await saveTemplates(templates);
+}
+
+export async function deleteTemplate(id: string): Promise<void> {
+  const templates = await loadTemplates();
+  if (templates.length <= 1) throw new Error('At least one template must remain');
+  const remaining = templates.filter((template) => template.id !== id);
+  if (remaining.length === templates.length) throw new Error(`Unknown template: ${id}`);
+  const active = await loadActiveTemplate();
+  await saveTemplates(remaining);
+  if (active.id === id) await setActiveTemplate(remaining[0].id);
 }
