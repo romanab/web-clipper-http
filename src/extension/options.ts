@@ -17,6 +17,7 @@ form.addEventListener('submit', async (event) => {
   status.textContent = '';
   try {
     await saveConfig({
+      destination: 'http',
       endpoint: endpoint.value,
       bearerToken: token.value || undefined,
     });
