@@ -2,26 +2,26 @@
 
 ## Before v0.1.0 release
 
-- [ ] Harden HTTP delivery
-  - Add a request timeout using `AbortController`.
-  - Distinguish timeout/network failures from non-2xx HTTP responses in the popup.
-  - Add tests for timeout and network failure behavior.
+- [x] Harden HTTP delivery
+  - Request timeout using `AbortController` (15 seconds by default).
+  - Distinct timeout/network/non-2xx errors.
+  - Tests for timeout and network failure behavior.
 
-- [ ] Document the HTTP contract
-  - Document the default compact `{ clip, context }` payload.
-  - Document `compact` versus `full` payload modes.
-  - Document bearer-token authentication and endpoint requirements.
-  - Include a minimal receiver example.
+- [x] Document the HTTP contract
+  - Default compact `{ clip, context }` payload.
+  - `compact` versus `full` payload modes.
+  - Bearer-token authentication and endpoint requirements.
+  - Minimal dependency-free Node receiver example.
 
-- [ ] Add CI
-  - Run `npm install` for this project and the pinned upstream submodule.
-  - Run `npm run verify` on pushes and pull requests.
-  - Ensure the upstream submodule is checked out recursively.
+- [x] Add CI
+  - Recursive upstream submodule checkout.
+  - Root and pinned-upstream dependency installation.
+  - `npm run verify`, packaging, and ZIP artifact upload on pushes and pull requests.
 
-- [ ] Add release packaging
-  - Produce a deterministic ZIP from `dist/`.
-  - Keep the extension version synchronized with the release version.
-  - Add a release/check command that verifies before packaging.
+- [x] Add release packaging
+  - Deterministic ZIP from `dist/` using sorted stored entries and a fixed timestamp.
+  - Packaging rejects a `package.json` / `manifest.json` version mismatch.
+  - `npm run package` verifies and builds before packaging.
 
 ## Upstream maintenance
 
@@ -41,10 +41,10 @@
 
 ## Template UX
 
-- [ ] Add template deletion.
-- [ ] Add template renaming if it can be done without diverging from Obsidian-compatible import/export semantics.
-- [ ] Make the active template explicit in Settings.
-- [ ] Improve duplicate-template handling during imports.
+- [x] Add template deletion while preventing deletion of the last template.
+- [x] Add template renaming without changing the Obsidian-compatible export shape.
+- [x] Make the active template explicit in Settings and allow activation there.
+- [x] Skip exact duplicate templates during imports.
 
 ## Later / optional
 
