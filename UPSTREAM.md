@@ -14,7 +14,7 @@ The machine-readable tested target is `upstream.json`. The current target is:
 
 ## Dependency policy
 
-Until Obsidian publishes the clipping core as a stable package/export, use the complete upstream repository as the `upstream/obsidian-clipper` git submodule. Runtime code is consumed from upstream's own `build:api` artifact. Types are consumed from the same pinned source tree.
+Until Obsidian publishes the clipping core as a stable package/export, use the complete upstream repository as the `upstream/obsidian-clipper` git submodule. Runtime code is consumed from upstream's own `build:api` artifact. Types are consumed through the local adapter boundary.
 
 ## Boundary rule
 
@@ -36,17 +36,33 @@ npm run build
 
 ## Updating upstream deliberately
 
-Do upgrades on a branch. Do not edit `upstream.json` first; its mismatch is the guard that proves you actually moved upstream.
+Do upgrades on a branch. The supported update command takes a tag or commit SHA:
 
 ```sh
-git -C upstream/obsidian-clipper fetch --tags origin
-git -C upstream/obsidian-clipper checkout <new-tag-or-sha>
-npm --prefix upstream/obsidian-clipper install
-npm run typecheck
-npm test
+npm run update:upstream -- <tag-or-sha>
 ```
 
-If compatibility breaks, adapt `src/clipper/adapter.ts` rather than leaking upstream types into the destination layer. Once type checking and tests pass, update the `sha` and `version` in `upstream.json`, run `npm run verify`, then commit both the submodule gitlink and `upstream.json` together.
+The updater:
+
+1. fetches upstream tags;
+2. checks out the requested upstream ref in detached-HEAD mode;
+3. reads the candidate version and SHA;
+4. installs the candidate upstream dependencies;
+5. builds upstream's API artifact;
+6. runs this project's typecheck and test suite against the candidate while deliberately bypassing the old pin check;
+7. updates `upstream.json` only after those compatibility checks pass.
+
+It does not commit anything. Review the resulting submodule and `upstream.json` changes, then run:
+
+```sh
+npm run verify
+npm run build
+git diff --submodule=log
+```
+
+Commit `upstream.json` and the `upstream/obsidian-clipper` submodule gitlink together. This makes every accepted upstream movement an explicit, reproducible compatibility decision.
+
+If compatibility breaks, the updater exits before changing `upstream.json`. Adapt `src/clipper/adapter.ts` and/or the compatibility declarations and tests rather than leaking upstream types into the destination layer. Re-run the updater after the boundary is compatible.
 
 The integration test clips fixture HTML through the upstream engine and adapter, then verifies the HTTP payload. That is the primary behavioral compatibility contract for upstream upgrades.
 
