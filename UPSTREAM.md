@@ -1,6 +1,6 @@
 # Upstream strategy
 
-This project consumes the Obsidian Web Clipper clipping engine through a single adapter boundary rather than modifying the upstream extension.
+This project consumes the Obsidian Web Clipper clipping engine through a single adapter boundary rather than modifying or forking the upstream extension.
 
 ## Compatibility target
 
@@ -16,9 +16,13 @@ The machine-readable tested target is `upstream.json`. The current target is:
 
 Until Obsidian publishes the clipping core as a stable package/export, use the complete upstream repository as the `upstream/obsidian-clipper` git submodule. Runtime code is consumed from upstream's own `build:api` artifact. Types are consumed through the local adapter boundary.
 
+Do not make project-specific changes inside the upstream submodule. HTTP delivery, configuration, templates, and browser-extension UI belong in this repository.
+
 ## Boundary rule
 
-Only `src/clipper/adapter.ts` may import code or types from `upstream/obsidian-clipper`. Everything else uses the local contracts in `src/types.ts`.
+Only `src/clipper/adapter.ts` may import code or types from `upstream/obsidian-clipper`. Everything else uses the local contracts in `src/types.ts` and the local destination/template interfaces.
+
+The purpose of this boundary is to make upstream upgrades a compatibility exercise at one seam rather than a recurring fork merge.
 
 ## Normal build and verification
 
@@ -32,11 +36,19 @@ npm run verify
 npm run build
 ```
 
-`npm run verify` checks the upstream pin, builds upstream's API artifact, type-checks our compatibility boundary, and runs our unit/integration contracts. `npm run build` runs that verification before creating the browser extension bundle.
+`npm run verify` checks the upstream pin, builds upstream's API artifact, type-checks the compatibility boundary, and runs the unit/integration contracts. `npm run build` performs verification before creating the browser-extension bundle.
+
+For a complete release build, including the deterministic ZIP artifact, run:
+
+```sh
+npm run release:check
+```
 
 ## Updating upstream deliberately
 
-Do upgrades on a branch. The supported update command takes a tag or commit SHA:
+The first real validation of this update workflow is intentionally deferred until a newer Obsidian Web Clipper release exists. Do not move the known-good `1.7.1` pin solely to manufacture an update test.
+
+When a real release is available, perform the upgrade on a branch. The supported update command takes an upstream tag or commit SHA:
 
 ```sh
 npm run update:upstream -- <tag-or-sha>
@@ -58,12 +70,31 @@ It does not commit anything. Review the resulting submodule and `upstream.json` 
 npm run verify
 npm run build
 git diff --submodule=log
+git status
+```
+
+For a release candidate, also run:
+
+```sh
+npm run release:check
 ```
 
 Commit `upstream.json` and the `upstream/obsidian-clipper` submodule gitlink together. This makes every accepted upstream movement an explicit, reproducible compatibility decision.
 
-If compatibility breaks, the updater exits before changing `upstream.json`. Adapt `src/clipper/adapter.ts` and/or the compatibility declarations and tests rather than leaking upstream types into the destination layer. Re-run the updater after the boundary is compatible.
+## If an upstream upgrade breaks compatibility
 
-The integration test clips fixture HTML through the upstream engine and adapter, then verifies the HTTP payload. That is the primary behavioral compatibility contract for upstream upgrades.
+The updater exits before changing `upstream.json` if the compatibility suite fails. Do not patch the upstream submodule to make the project pass.
 
-If Obsidian later publishes a supported core package, replace the adapter runtime/type imports with that package while keeping the local clip and destination contracts unchanged.
+Instead:
+
+1. inspect the upstream API/template behavior change;
+2. adapt `src/clipper/adapter.ts`, local compatibility declarations, and/or tests as necessary;
+3. keep the change contained behind the local boundary;
+4. rerun `npm run update:upstream -- <tag-or-sha>`;
+5. accept the new pin only after the compatibility and release gates pass.
+
+The integration test that clips fixture HTML through the upstream engine and adapter and verifies the HTTP payload is the primary behavioral compatibility contract for upstream upgrades.
+
+## Future upstream package
+
+If Obsidian later publishes a supported clipping-core package/API, replace the adapter runtime/type imports with that package while keeping the local `CompiledClip`, template-store, and destination contracts unchanged. The rest of the extension should not need to know how the clipping core is sourced.
