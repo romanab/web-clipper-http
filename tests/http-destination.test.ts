@@ -8,7 +8,10 @@ const clip: CompiledClip = {
   variables: { title: 'Example', fullHtml: '<html>large source</html>' }, sourceUrl: 'https://example.com',
 };
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
 
 describe('HttpDestination', () => {
   it('posts the lean compiled artifact by default', async () => {
@@ -46,5 +49,23 @@ describe('HttpDestination', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('nope', { status: 500 }));
     await expect(new HttpDestination({ endpoint: 'https://receiver.example/clips' })
       .send(clip, { sourceUrl: clip.sourceUrl })).rejects.toThrow('HTTP destination failed (500): nope');
+  });
+
+  it('distinguishes network failures', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
+    await expect(new HttpDestination({ endpoint: 'https://receiver.example/clips' })
+      .send(clip, { sourceUrl: clip.sourceUrl })).rejects.toThrow('HTTP destination network error: Failed to fetch');
+  });
+
+  it('aborts requests that exceed the timeout', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(globalThis, 'fetch').mockImplementation((_url, init) => new Promise((_resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+    }));
+
+    const request = new HttpDestination({ endpoint: 'https://receiver.example/clips', timeoutMs: 25 })
+      .send(clip, { sourceUrl: clip.sourceUrl });
+    await vi.advanceTimersByTimeAsync(25);
+    await expect(request).rejects.toThrow('HTTP destination timed out after 25ms');
   });
 });
