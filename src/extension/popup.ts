@@ -1,6 +1,6 @@
 import { compileClip, type ClipperTemplate } from '../clipper/adapter.js';
 import { loadConfig } from '../config.js';
-import { HttpDestination } from '../destinations/http.js';
+import { getDestination } from '../destinations/registry.js';
 
 const button = document.querySelector<HTMLButtonElement>('#clip');
 const status = document.querySelector<HTMLElement>('#status');
@@ -18,7 +18,7 @@ button.addEventListener('click', async () => {
   status.textContent = 'Clipping...';
   try {
     const config = await loadConfig();
-    if (!config.endpoint) throw new Error('Configure an HTTP endpoint first');
+    const destination = getDestination(config.destination, config);
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab.id || !tab.url) throw new Error('No active web page');
 
@@ -32,7 +32,7 @@ button.addEventListener('click', async () => {
     const compiled = await compileClip({
       html: page.html, url: tab.url, template: defaultTemplate, documentParser: new DOMParser(),
     });
-    await new HttpDestination(config).send(compiled, { sourceUrl: tab.url, sourceTitle: page.title });
+    await destination.send(compiled, { sourceUrl: tab.url, sourceTitle: page.title });
     status.textContent = `Sent: ${compiled.noteName}`;
   } catch (error) {
     status.textContent = error instanceof Error ? error.message : String(error);
