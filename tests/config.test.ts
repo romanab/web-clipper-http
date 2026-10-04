@@ -1,16 +1,31 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeConfig, validateConfig } from '../src/config.js';
+import { normalizeConfig, validateConfig, type HttpPayloadMode } from '../src/config.js';
 
-const httpConfig = (endpoint: string, bearerToken?: string) => ({
+const httpConfig = (
+  endpoint: string,
+  bearerToken?: string,
+  payloadMode: HttpPayloadMode = 'compact',
+) => ({
   destination: 'http' as const,
   endpoint,
   bearerToken,
+  payloadMode,
 });
 
 describe('HTTP destination configuration', () => {
   it('normalizes endpoint and bearer token whitespace', () => {
     expect(normalizeConfig(httpConfig('  https://example.com/clips  ', ' secret ')))
-      .toEqual({ destination: 'http', endpoint: 'https://example.com/clips', bearerToken: 'secret' });
+      .toEqual({
+        destination: 'http',
+        endpoint: 'https://example.com/clips',
+        bearerToken: 'secret',
+        payloadMode: 'compact',
+      });
+  });
+
+  it('preserves full payload mode', () => {
+    expect(normalizeConfig(httpConfig('https://example.com/clips', undefined, 'full')).payloadMode)
+      .toBe('full');
   });
 
   it('accepts localhost HTTP endpoints for local receivers', () => {
