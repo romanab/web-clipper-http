@@ -1,4 +1,7 @@
+import type { DestinationId } from './destinations/registry.js';
+
 export interface ExtensionConfig {
+  destination: DestinationId;
   endpoint: string;
   bearerToken?: string;
 }
@@ -7,6 +10,7 @@ const STORAGE_KEY = 'webClipperHttpConfig';
 
 export function normalizeConfig(config: ExtensionConfig): ExtensionConfig {
   return {
+    destination: config.destination,
     endpoint: config.endpoint.trim(),
     bearerToken: config.bearerToken?.trim() || undefined,
   };
@@ -14,6 +18,7 @@ export function normalizeConfig(config: ExtensionConfig): ExtensionConfig {
 
 export function validateConfig(config: ExtensionConfig): ExtensionConfig {
   const normalized = normalizeConfig(config);
+  if (normalized.destination !== 'http') throw new Error(`Unsupported destination: ${normalized.destination}`);
   if (!normalized.endpoint) throw new Error('Endpoint URL is required');
 
   let url: URL;
@@ -36,10 +41,11 @@ export async function loadConfig(): Promise<ExtensionConfig> {
   const stored = await chrome.storage.local.get(STORAGE_KEY);
   const value: unknown = stored[STORAGE_KEY];
 
-  if (!value || typeof value !== 'object') return { endpoint: '' };
+  if (!value || typeof value !== 'object') return { destination: 'http', endpoint: '' };
 
   const candidate = value as Record<string, unknown>;
   return normalizeConfig({
+    destination: candidate.destination === 'http' ? 'http' : 'http',
     endpoint: typeof candidate.endpoint === 'string' ? candidate.endpoint : '',
     bearerToken: typeof candidate.bearerToken === 'string' ? candidate.bearerToken : undefined,
   });
