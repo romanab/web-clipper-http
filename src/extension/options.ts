@@ -1,4 +1,4 @@
-import { loadConfig, saveConfig } from '../config.js';
+import { loadConfig, saveConfig, type HttpPayloadMode } from '../config.js';
 import { exportTemplateData, importTemplateData, loadTemplates, saveTemplates } from '../templates/store.js';
 
 function requireElement<T extends Element>(selector: string): T {
@@ -10,6 +10,7 @@ function requireElement<T extends Element>(selector: string): T {
 const form = requireElement<HTMLFormElement>('#config-form');
 const endpoint = requireElement<HTMLInputElement>('#endpoint');
 const token = requireElement<HTMLInputElement>('#token');
+const payloadMode = requireElement<HTMLSelectElement>('#payload-mode');
 const status = requireElement<HTMLElement>('#status');
 const templateFile = requireElement<HTMLInputElement>('#template-file');
 const importButton = requireElement<HTMLButtonElement>('#import-templates');
@@ -20,6 +21,7 @@ const templateStatus = requireElement<HTMLElement>('#template-status');
 void loadConfig().then((config) => {
   endpoint.value = config.endpoint;
   token.value = config.bearerToken ?? '';
+  payloadMode.value = config.payloadMode;
 });
 
 async function renderTemplates(): Promise<void> {
@@ -37,7 +39,12 @@ form.addEventListener('submit', async (event) => {
   event.preventDefault();
   status.textContent = '';
   try {
-    await saveConfig({ destination: 'http', endpoint: endpoint.value, bearerToken: token.value || undefined });
+    await saveConfig({
+      destination: 'http',
+      endpoint: endpoint.value,
+      bearerToken: token.value || undefined,
+      payloadMode: payloadMode.value as HttpPayloadMode,
+    });
     status.textContent = 'Saved';
     setTimeout(() => { status.textContent = ''; }, 1500);
   } catch (error) {
