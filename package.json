@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "check:upstream": "node scripts/check-upstream.mjs",
+    "update:upstream": "node scripts/update-upstream.mjs",
     "build:upstream": "npm run check:upstream && npm --prefix upstream/obsidian-clipper run build:api",
     "typecheck": "tsc --noEmit",
     "test": "vitest run tests",
