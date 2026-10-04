@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { parseHTML } from 'linkedom';
+import { JSDOM } from 'jsdom';
 import { compileClip, type ClipperTemplate } from '../src/clipper/adapter.js';
 import { HttpDestination } from '../src/destinations/http.js';
 
@@ -36,11 +36,11 @@ beforeEach(() => {
   previousWindow = globalThis.window;
   previousDOMParser = globalThis.DOMParser;
 
-  const { document, window } = parseHTML(html);
+  const dom = new JSDOM(html, { url: 'https://fixture.example/article' });
   Object.assign(globalThis, {
-    document,
-    window,
-    DOMParser: window.DOMParser,
+    document: dom.window.document,
+    window: dom.window,
+    DOMParser: dom.window.DOMParser,
   });
 });
 
