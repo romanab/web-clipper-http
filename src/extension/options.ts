@@ -1,5 +1,8 @@
 import { loadConfig, saveConfig, type HttpPayloadMode } from '../config.js';
-import { exportTemplateData, importTemplateData, loadTemplates, saveTemplates } from '../templates/store.js';
+import {
+  deleteTemplate, exportTemplateData, importTemplateData, loadActiveTemplate, loadTemplates,
+  mergeImportedTemplates, renameTemplate, saveTemplates, setActiveTemplate,
+} from '../templates/store.js';
 
 function requireElement<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector);
@@ -25,10 +28,55 @@ void loadConfig().then((config) => {
 });
 
 async function renderTemplates(): Promise<void> {
-  const templates = await loadTemplates();
+  const [templates, active] = await Promise.all([loadTemplates(), loadActiveTemplate()]);
   templateList.replaceChildren(...templates.map((template) => {
     const item = document.createElement('li');
-    item.textContent = `${template.name} (${template.id})`;
+    const label = document.createElement('span');
+    label.textContent = `${template.name}${template.id === active.id ? ' — active' : ''} `;
+    item.append(label);
+
+    if (template.id !== active.id) {
+      const activate = document.createElement('button');
+      activate.type = 'button';
+      activate.textContent = 'Use';
+      activate.addEventListener('click', async () => {
+        await setActiveTemplate(template.id);
+        await renderTemplates();
+      });
+      item.append(activate, document.createTextNode(' '));
+    }
+
+    const rename = document.createElement('button');
+    rename.type = 'button';
+    rename.textContent = 'Rename';
+    rename.addEventListener('click', async () => {
+      const name = window.prompt('Template name', template.name);
+      if (name === null || name.trim() === template.name) return;
+      try {
+        await renameTemplate(template.id, name);
+        await renderTemplates();
+        templateStatus.textContent = 'Template renamed';
+      } catch (error) {
+        templateStatus.textContent = error instanceof Error ? error.message : String(error);
+      }
+    });
+    item.append(rename, document.createTextNode(' '));
+
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.textContent = 'Delete';
+    remove.disabled = templates.length <= 1;
+    remove.addEventListener('click', async () => {
+      if (!window.confirm(`Delete template “${template.name}”?`)) return;
+      try {
+        await deleteTemplate(template.id);
+        await renderTemplates();
+        templateStatus.textContent = 'Template deleted';
+      } catch (error) {
+        templateStatus.textContent = error instanceof Error ? error.message : String(error);
+      }
+    });
+    item.append(remove);
     return item;
   }));
 }
@@ -39,12 +87,7 @@ form.addEventListener('submit', async (event) => {
   event.preventDefault();
   status.textContent = '';
   try {
-    await saveConfig({
-      destination: 'http',
-      endpoint: endpoint.value,
-      bearerToken: token.value || undefined,
-      payloadMode: payloadMode.value as HttpPayloadMode,
-    });
+    await saveConfig({ destination: 'http', endpoint: endpoint.value, bearerToken: token.value || undefined, payloadMode: payloadMode.value as HttpPayloadMode });
     status.textContent = 'Saved';
     setTimeout(() => { status.textContent = ''; }, 1500);
   } catch (error) {
@@ -58,11 +101,10 @@ importButton.addEventListener('click', async () => {
     const file = templateFile.files?.[0];
     if (!file) throw new Error('Choose a JSON file first');
     const imported = importTemplateData(JSON.parse(await file.text()));
-    const existing = await loadTemplates();
-    const existingIsDefaultOnly = existing.length === 1 && existing[0]?.id === 'http-default';
-    await saveTemplates(existingIsDefaultOnly ? imported : [...existing, ...imported]);
+    const merged = mergeImportedTemplates(await loadTemplates(), imported);
+    await saveTemplates(merged.templates);
     await renderTemplates();
-    templateStatus.textContent = `Imported ${imported.length} template${imported.length === 1 ? '' : 's'}`;
+    templateStatus.textContent = `Imported ${merged.added}; skipped ${merged.skipped} exact duplicate${merged.skipped === 1 ? '' : 's'}`;
   } catch (error) {
     templateStatus.textContent = error instanceof Error ? error.message : String(error);
   }
