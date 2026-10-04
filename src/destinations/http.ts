@@ -8,8 +8,10 @@ export interface HttpDestinationConfig {
   payloadMode?: HttpPayloadMode;
 }
 
-function compactClip(clip: CompiledClip): Omit<CompiledClip, 'variables'> {
-  const { variables: _variables, ...compiled } = clip;
+type CompactClip = Omit<CompiledClip, 'variables' | 'fullContent'>;
+
+function compactClip(clip: CompiledClip): CompactClip {
+  const { variables: _variables, fullContent: _fullContent, ...compiled } = clip;
   return compiled;
 }
 
