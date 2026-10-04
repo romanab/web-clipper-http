@@ -3,10 +3,15 @@ import { loadConfig } from '../config.js';
 import { getDestination } from '../destinations/registry.js';
 import { loadActiveTemplate, loadTemplates, setActiveTemplate } from '../templates/store.js';
 
-const button = document.querySelector<HTMLButtonElement>('#clip');
-const templateSelect = document.querySelector<HTMLSelectElement>('#template');
-const status = document.querySelector<HTMLElement>('#status');
-if (!button || !templateSelect || !status) throw new Error('Popup is incomplete');
+function requireElement<T extends Element>(selector: string): T {
+  const element = document.querySelector<T>(selector);
+  if (!element) throw new Error(`Popup is missing ${selector}`);
+  return element;
+}
+
+const button = requireElement<HTMLButtonElement>('#clip');
+const templateSelect = requireElement<HTMLSelectElement>('#template');
+const status = requireElement<HTMLElement>('#status');
 
 async function populateTemplates(): Promise<void> {
   const [templates, active] = await Promise.all([loadTemplates(), loadActiveTemplate()]);
