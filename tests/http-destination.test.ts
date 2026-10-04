@@ -11,7 +11,7 @@ const clip: CompiledClip = {
 afterEach(() => vi.restoreAllMocks());
 
 describe('HttpDestination', () => {
-  it('posts compact compiled clips by default', async () => {
+  it('posts the lean compiled artifact by default', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 204 }));
     await new HttpDestination({ endpoint: 'https://receiver.example/clips', bearerToken: 'secret' })
       .send(clip, { sourceUrl: clip.sourceUrl });
@@ -26,14 +26,14 @@ describe('HttpDestination', () => {
       noteName: clip.noteName,
       frontmatter: clip.frontmatter,
       content: clip.content,
-      fullContent: clip.fullContent,
       properties: clip.properties,
       sourceUrl: clip.sourceUrl,
     });
     expect(payload.clip).not.toHaveProperty('variables');
+    expect(payload.clip).not.toHaveProperty('fullContent');
   });
 
-  it('includes variables in full mode', async () => {
+  it('includes the complete compiled clip in full mode', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 204 }));
     await new HttpDestination({ endpoint: 'https://receiver.example/clips', payloadMode: 'full' })
       .send(clip, { sourceUrl: clip.sourceUrl });
