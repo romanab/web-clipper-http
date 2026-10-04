@@ -1,9 +1,16 @@
 import type { CompiledClip, Destination, DestinationContext } from '../types.js';
+import type { HttpPayloadMode } from '../config.js';
 
 export interface HttpDestinationConfig {
   endpoint: string;
   bearerToken?: string;
   headers?: Record<string, string>;
+  payloadMode?: HttpPayloadMode;
+}
+
+function compactClip(clip: CompiledClip): Omit<CompiledClip, 'variables'> {
+  const { variables: _variables, ...compiled } = clip;
+  return compiled;
 }
 
 export class HttpDestination implements Destination {
@@ -23,10 +30,11 @@ export class HttpDestination implements Destination {
       headers.Authorization = `Bearer ${this.config.bearerToken}`;
     }
 
+    const payloadClip = this.config.payloadMode === 'full' ? clip : compactClip(clip);
     const response = await fetch(endpoint, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ clip, context }),
+      body: JSON.stringify({ clip: payloadClip, context }),
     });
 
     if (!response.ok) {
