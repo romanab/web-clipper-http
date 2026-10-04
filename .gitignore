@@ -1,0 +1,5 @@
+node_modules/
+dist/
+releases/
+upstream/obsidian-clipper/node_modules/
+upstream/obsidian-clipper/dist/
