@@ -8,6 +8,7 @@
     <form id="config-form">
       <p><label>Endpoint URL<br><input id="endpoint" type="url" required placeholder="https://example.com/api/clips"></label></p>
       <p><label>Bearer token<br><input id="token" type="password" autocomplete="off"></label></p>
+      <p><label>Payload<br><select id="payload-mode"><option value="compact">Compact — compiled clip without variables</option><option value="full">Full — include extracted variables and source data</option></select></label></p>
       <button type="submit">Save destination</button> <span id="status" role="status"></span>
     </form>
 
