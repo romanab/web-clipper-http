@@ -5,22 +5,40 @@ import type { CompiledClip } from '../src/types.js';
 const clip: CompiledClip = {
   noteName: 'Example', frontmatter: '---\nsource: x\n---\n', content: '# Example',
   fullContent: '---\nsource: x\n---\n# Example', properties: { source: 'x' },
-  variables: { title: 'Example' }, sourceUrl: 'https://example.com',
+  variables: { title: 'Example', fullHtml: '<html>large source</html>' }, sourceUrl: 'https://example.com',
 };
 
 afterEach(() => vi.restoreAllMocks());
 
 describe('HttpDestination', () => {
-  it('posts the local clip contract as JSON', async () => {
+  it('posts compact compiled clips by default', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 204 }));
     await new HttpDestination({ endpoint: 'https://receiver.example/clips', bearerToken: 'secret' })
       .send(clip, { sourceUrl: clip.sourceUrl });
 
-    expect(fetchMock).toHaveBeenCalledOnce();
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe('https://receiver.example/clips');
     expect(init?.method).toBe('POST');
     expect(init?.headers).toMatchObject({ Authorization: 'Bearer secret', 'Content-Type': 'application/json' });
+    const payload = JSON.parse(String(init?.body));
+    expect(payload.context).toEqual({ sourceUrl: clip.sourceUrl });
+    expect(payload.clip).toEqual({
+      noteName: clip.noteName,
+      frontmatter: clip.frontmatter,
+      content: clip.content,
+      fullContent: clip.fullContent,
+      properties: clip.properties,
+      sourceUrl: clip.sourceUrl,
+    });
+    expect(payload.clip).not.toHaveProperty('variables');
+  });
+
+  it('includes variables in full mode', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 204 }));
+    await new HttpDestination({ endpoint: 'https://receiver.example/clips', payloadMode: 'full' })
+      .send(clip, { sourceUrl: clip.sourceUrl });
+
+    const [, init] = fetchMock.mock.calls[0];
     expect(JSON.parse(String(init?.body))).toEqual({ clip, context: { sourceUrl: clip.sourceUrl } });
   });
 
