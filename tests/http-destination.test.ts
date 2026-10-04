@@ -65,7 +65,8 @@ describe('HttpDestination', () => {
 
     const request = new HttpDestination({ endpoint: 'https://receiver.example/clips', timeoutMs: 25 })
       .send(clip, { sourceUrl: clip.sourceUrl });
+    const assertion = expect(request).rejects.toThrow('HTTP destination timed out after 25ms');
     await vi.advanceTimersByTimeAsync(25);
-    await expect(request).rejects.toThrow('HTTP destination timed out after 25ms');
+    await assertion;
   });
 });
