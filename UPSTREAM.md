@@ -4,31 +4,50 @@ This project consumes the Obsidian Web Clipper clipping engine through a single 
 
 ## Compatibility target
 
-`obsidianmd/obsidian-clipper@6d56d618b00bd970aa738d6a7a61edee27783e81`
+The machine-readable tested target is `upstream.json`. The current target is:
+
+- repository: `obsidianmd/obsidian-clipper`
+- version: `1.7.1`
+- SHA: `6d56d618b00bd970aa738d6a7a61edee27783e81`
+
+`npm run check:upstream` fails if the submodule checkout or upstream package version differs from that target. This prevents an unnoticed submodule move from producing an unverified extension.
 
 ## Dependency policy
 
-Until Obsidian publishes the clipping core as a stable package/export, use a pinned checkout of the complete upstream repository at `upstream/obsidian-clipper`.
-
-Recommended local setup:
-
-```sh
-git submodule add https://github.com/obsidianmd/obsidian-clipper.git upstream/obsidian-clipper
-git -C upstream/obsidian-clipper checkout 6d56d618b00bd970aa738d6a7a61edee27783e81
-```
-
-The GitHub connector used to bootstrap this repository cannot create gitlink/submodule entries directly, so the submodule itself must be added from a git client. The application architecture does not depend on this limitation.
+Until Obsidian publishes the clipping core as a stable package/export, use the complete upstream repository as the `upstream/obsidian-clipper` git submodule. Runtime code is consumed from upstream's own `build:api` artifact. Types are consumed from the same pinned source tree.
 
 ## Boundary rule
 
-Only `src/clipper/adapter.ts` may import code or types from `upstream/obsidian-clipper`. Everything else uses `src/types.ts`.
+Only `src/clipper/adapter.ts` may import code or types from `upstream/obsidian-clipper`. Everything else uses the local contracts in `src/types.ts`.
 
-## Updating upstream
+## Normal build and verification
 
-1. Fetch the new upstream revision.
-2. Move the submodule pin.
-3. Run type checking and contract tests.
-4. If the contract fails, change only `src/clipper/adapter.ts` where possible.
-5. Record the tested upstream SHA here.
+After cloning:
 
-If Obsidian later publishes a supported core package, replace the adapter imports with that package while keeping the local contracts and destination modules unchanged.
+```sh
+git submodule update --init --recursive
+npm install
+npm --prefix upstream/obsidian-clipper install
+npm run verify
+npm run build
+```
+
+`npm run verify` checks the upstream pin, builds upstream's API artifact, type-checks our compatibility boundary, and runs our unit/integration contracts. `npm run build` runs that verification before creating the browser extension bundle.
+
+## Updating upstream deliberately
+
+Do upgrades on a branch. Do not edit `upstream.json` first; its mismatch is the guard that proves you actually moved upstream.
+
+```sh
+git -C upstream/obsidian-clipper fetch --tags origin
+git -C upstream/obsidian-clipper checkout <new-tag-or-sha>
+npm --prefix upstream/obsidian-clipper install
+npm run typecheck
+npm test
+```
+
+If compatibility breaks, adapt `src/clipper/adapter.ts` rather than leaking upstream types into the destination layer. Once type checking and tests pass, update the `sha` and `version` in `upstream.json`, run `npm run verify`, then commit both the submodule gitlink and `upstream.json` together.
+
+The integration test clips fixture HTML through the upstream engine and adapter, then verifies the HTTP payload. That is the primary behavioral compatibility contract for upstream upgrades.
+
+If Obsidian later publishes a supported core package, replace the adapter runtime/type imports with that package while keeping the local clip and destination contracts unchanged.
